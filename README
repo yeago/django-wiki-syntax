@@ -1,0 +1,19 @@
+Ever want to type [[username]] into your blog-entries and get a handy link?
+
+Ever want to allow users to link to [[things]]s in your database with the most minimal hassle possible?
+
+Love how Wikipedia lets you create [[links]], like, super easily?
+
+INSTALLATION:
+
+1. Add 'wikify' to your INSTALLED_APPS
+
+2. Add a WIKISYNTAX_MODELS list to your settings.py. Example:
+
+WIKISYNTAX_MODELS = [   # ('app.Model',['fields','to','check']) 
+        ('base.UserProfile',['user__username'],),
+        ('deck.Deck',['slug','name']),
+        ('base.Card',['name']),
+]
+
+3. load the {% wiki_tags %} and pass strings through the {% wikify str %} template tag.
