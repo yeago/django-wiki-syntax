@@ -8,6 +8,8 @@ class WikiException(Exception): # Raised when a particular string is not found i
 
 class WikiMatch(object): # placeholder object for syntax convenience below.
 	def render(self,obj,display=None,trail=None):
+		if hasattr(obj,'wiki_render'):
+			return '%s%s' % (obj.wiki_render(display=display),trail or '')
 		return '<a href="%s">%s</a>%s' % (obj.get_absolute_url(),display or obj,trail or '')
 
 def wikify(match): # Excepts a regexp match
@@ -62,8 +64,10 @@ def wikify(match): # Excepts a regexp match
 				except wiki.model.MultipleObjectsReturned, e:
 					exceptions.append(e)
 
+			"""
 			for e in exceptions:
 				raise e
+			"""
 
 	"""
 	Now we're going to try a generic match across all our models, unlike the former
@@ -99,10 +103,12 @@ def wikify(match): # Excepts a regexp match
 			except wiki.model.MultipleObjectsReturned, e:
 				exceptions.append(e)
 
+	"""
 	for e in exceptions:
 		raise e
 
 	raise WikiException
+	"""
 
 class wikify_string(object):
 	def __call__(self, string, wiki_cache = None):
