@@ -8,6 +8,8 @@ class WikiException(Exception): # Raised when a particular string is not found i
 
 class WikiMatch(object): # placeholder object for syntax convenience below.
 	def render(self,obj,display=None,trail=None):
+		if hasattr(obj,'wiki_render'):
+			return '%s%s' % (obj.wiki_render(display=display),trail or '')
 		return '<a href="%s">%s</a>%s' % (obj.get_absolute_url(),display or obj,trail or '')
 
 def wikify(match): # Excepts a regexp match
