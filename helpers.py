@@ -114,8 +114,11 @@ class wikify_string(object):
 	def __call__(self, string, wiki_cache = None):
 		self.wiki_cache = wiki_cache or {} 
 		from wikisyntax import fix_unicode
-		content = re.sub('\[\[([^\]]+?)\]\](.*?)', self.markup_to_links, fix_unicode.fix_unicode(string))
-		return content, self.wiki_cache
+		if string:
+			content = re.sub('\[\[([^\]]+?)\]\](.*?)', self.markup_to_links, fix_unicode.fix_unicode(string))
+			return content, self.wiki_cache
+
+		return '', self.wiki_cache # quick fix.
 
 	def __new__(cls, string, **kwargs):
 		obj = super(wikify_string, cls).__new__(cls)
