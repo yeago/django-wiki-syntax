@@ -113,7 +113,8 @@ def wikify(match): # Excepts a regexp match
 class wikify_string(object):
 	def __call__(self, string, wiki_cache = None):
 		self.wiki_cache = wiki_cache or {} 
-		content = re.sub('\[\[([^\]]+?)\]\](.*?)', self.markup_to_links, string)
+		from wikisyntax import fix_unicode
+		content = re.sub('\[\[([^\]]+?)\]\](.*?)', self.markup_to_links, fix_unicode.fix_unicode(string))
 		return content, self.wiki_cache
 
 	def __new__(cls, string, **kwargs):
