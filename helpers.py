@@ -64,8 +64,10 @@ def wikify(match): # Excepts a regexp match
 				except wiki.model.MultipleObjectsReturned, e:
 					exceptions.append(e)
 
+			"""
 			for e in exceptions:
 				raise e
+			"""
 
 	"""
 	Now we're going to try a generic match across all our models, unlike the former
@@ -101,10 +103,12 @@ def wikify(match): # Excepts a regexp match
 			except wiki.model.MultipleObjectsReturned, e:
 				exceptions.append(e)
 
+	"""
 	for e in exceptions:
 		raise e
 
 	raise WikiException
+	"""
 
 class wikify_string(object):
 	def __call__(self, string, wiki_cache = None):
