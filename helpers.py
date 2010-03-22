@@ -57,7 +57,7 @@ def wikify(match): # Excepts a regexp match
 
 			for field in wiki.fields:
 				try:
-					obj = wiki.objects.get(**{ field: token })
+					obj = wiki.model.objects.get(**{ field: token })
 					return wiki.render(obj,trail=trail)
 				except wiki.model.DoesNotExist, e:
 					exceptions.append(e)

@@ -13,7 +13,7 @@ class WikiFormat(template.Node):
 		string = self.string.resolve(context)
 		self.context = context
 		from django.contrib.markup.templatetags.markup import markdown
-		string = markdown(string)
+		string = markdown(string.replace("\r\n","\n\n"))
 
 		"""
 		As we're processesing a template with this templatetag, we don't want to re-query already-known
@@ -29,7 +29,7 @@ class WikiFormat(template.Node):
 		content, wiki_cache = wikify_string(string,wiki_cache=context.get(context_variable))
 		context.render_context[context_variable].update(wiki_cache)
 
-		content = re.sub('(.*?)(?:(?:\r\n\r\n)*$|\r\n\r\n)','<p>%s</p>\r\n' % r'\1' , content)
+		#content = re.sub('(.*?)(?:(?:\r\n\r\n)*$|\r\n\r\n)','<p>%s</p>\r\n' % r'\1' , content)
 		return content.replace("[[","").replace("]]","")
 
 @register.tag
