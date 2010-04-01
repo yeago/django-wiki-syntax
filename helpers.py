@@ -103,6 +103,7 @@ def wikify(match): # Excepts a regexp match
 			except wiki.model.MultipleObjectsReturned, e:
 				exceptions.append(e)
 
+	return '%s%s' % (name,trail)
 	"""
 	for e in exceptions:
 		raise e
