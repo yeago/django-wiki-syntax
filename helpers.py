@@ -69,7 +69,7 @@ def wikify(match): # Excepts a regexp match
 	So we just return the original string
 	"""
 
-	return '%s%s' % (name,trail)
+	return '%s%s' % (token,trail)
 
 class wikify_string(object):
 	def __call__(self, string, wiki_cache = None):
