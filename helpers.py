@@ -6,110 +6,70 @@ from django.db.models.loading import get_model
 class WikiException(Exception): # Raised when a particular string is not found in any of the models.
 	pass
 
-class WikiMatch(object): # placeholder object for syntax convenience below.
-	def render(self,obj,display=None,trail=None):
-		if hasattr(obj,'wiki_render'):
-			return '%s%s' % (obj.wiki_render(display=display),trail or '')
-		return '<a href="%s">%s</a>%s' % (obj.get_absolute_url(),display or obj,trail or '')
-
 def wikify(match): # Excepts a regexp match
 	wikis = [] # Here we store our wiki model info
-	for i in settings.WIKISYNTAX_MODELS:
-		new_wiki = WikiMatch()
-		new_wiki.modelname = i[0]
-		new_wiki.fields = i[1]
-		new_wiki.model = get_model(*i[0].split('.'))
-		new_wiki.prefix = new_wiki.model._meta.verbose_name.replace(' ','-')
-		try:
-			new_wiki.render = i[2]
-		except IndexError:
-			pass
 
-		wikis.append(new_wiki)
-
-	name, trail = match.groups() # we track the 'trail' because it may be a plural 's' or something useful
-
-	"""
-	First we're checking if the text is attempting to find a specific type of object.
-
-	Exmaple:
-
-	[[user:Subsume]]
-
-	[[card:Jack of Hearts]]
-
-	"""
-
-	if ':' in name and name.split(':',1)[0].lower().rstrip() in [i.prefix for i in wikis]:
-		prefix = name.split(':',1)[0].lower().rstrip()
-		token = name.split(':',1)[1].rstrip()
-
-		for wiki in wikis:
-			if not prefix == wiki.prefix:
+	for i in settings.WIKISYNTAX:
+		name = i[0]
+		modstring = i[1]
+		module = __import__(".".join(modstring.split(".")[:-1]))
+		for count, string in enumerate(modstring.split('.')):
+			if count == 0:
 				continue
 
-			"""
-			If, after checking all the fields, we don't return a model, we're going to raise
-			the exception
-			"""
+			module = getattr(module,string)
 
-			exceptions = []
+		module.name = name
+		wikis.append(module())
 
-			for field in wiki.fields:
-				try:
-					obj = wiki.model.objects.get(**{ field: token })
-					return wiki.render(obj,trail=trail)
-				except wiki.model.DoesNotExist, e:
-					exceptions.append(e)
-				except wiki.model.MultipleObjectsReturned, e:
-					exceptions.append(e)
+	token, trail = match.groups() # we track the 'trail' because it may be a plural 's' or something useful
 
-			"""
-			for e in exceptions:
-				raise e
-			"""
+	if ':' in token:
+		"""
+		First we're checking if the text is attempting to find a specific type of object.
+
+		Exmaples:
+
+		[[user:Subsume]]
+
+		[[card:Jack of Hearts]]
+
+		"""
+		prefix = token.split(':',1)[0].lower().rstrip()
+		name = token.split(':',1)[1].rstrip()
+		for wiki in wikis:
+			if prefix == wiki.name:
+				return wiki.render(name,trail=trail)
 
 	"""
-	Now we're going to try a generic match across all our models, unlike the former
-	case, we don't care about DoesNotExist errors since the user isn't specifically 
-	looking for a particular type.
+	Now we're going to try a generic match across all our wiki objects.
 
 	Example:
 
 	[[Christopher Walken]]
 
 	[[Studio 54]]
+	[[Beverly Hills: 90210]] <-- notice ':' was confused earlier as a wiki prefix name
 
 	[[Cat]]s <-- will try to match 'Cat' but will include the plural 
 
 	[[Cats]] <-- will try to match 'Cats' then 'Cat'
 
 	"""
-	exceptions = []
 	for wiki in wikis:
-		for field in wiki.fields:
-			try:
-				return wiki.render(wiki.model.objects.get(**{ field: name}))
-			except wiki.model.DoesNotExist:
-				if name[-1] == "s":
-					try:
-						obj = wiki.model.objects.get(**{ field: name[:-1]})
-						return wiki.render(obj,display='%ss' % (obj))
-					except wiki.model.DoesNotExist:
-						pass
-					except wiki.model.MultipleObjectsReturned, e:
-						exceptions.append(e)
+		if getattr(wiki,'prefix_only',None):
+			continue
 
-			except wiki.model.MultipleObjectsReturned, e:
-				exceptions.append(e)
+		if wiki.attempt(token):
+			return wiki.render(token,trail=trail)
+
+	"""
+	We tried everything we could and didn't find anything.
+
+	So we just return the original string
+	"""
 
 	return '%s%s' % (name,trail)
-	"""
-	for e in exceptions:
-		raise e
-
-	raise WikiException
-	"""
 
 class wikify_string(object):
 	def __call__(self, string, wiki_cache = None):
