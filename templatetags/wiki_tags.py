@@ -13,7 +13,8 @@ class WikiFormat(template.Node):
 		string = self.string.resolve(context)
 		self.context = context
 		from django.contrib.markup.templatetags.markup import markdown
-		string = markdown(string.replace("\r\n","\n\n"))
+		string = markdown(string.replace("\r\n","\n\n").replace('[[','LBRACK666').replace(']]','RBRACK666'))
+		string = string.replace('LBRACK666','[[').replace('RBRACK666',']]')
 
 		"""
 		As we're processesing a template with this templatetag, we don't want to re-query already-known
