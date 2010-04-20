@@ -39,7 +39,15 @@ def wikify(match): # Excepts a regexp match
 		name = token.split(':',1)[1].rstrip()
 		for wiki in wikis:
 			if prefix == wiki.name:
-				return wiki.render(name,trail=trail)
+				if wiki.attempt(name):
+					"""
+					We still check attempt() because maybe
+					work is done in attempt that render relies on,
+					or maybe this is a false positive.
+					"""
+					return wiki.render(name,trail=trail)
+				else:
+					break
 
 	"""
 	Now we're going to try a generic match across all our wiki objects.
