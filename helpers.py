@@ -45,7 +45,7 @@ def wikify(match): # Excepts a regexp match
 					work is done in attempt that render relies on,
 					or maybe this is a false positive.
 					"""
-					return wiki.render(name,trail=trail)
+					return wiki.render(name,trail=trail,explicit=True)
 				else:
 					break
 
