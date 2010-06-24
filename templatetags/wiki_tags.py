@@ -13,15 +13,12 @@ class WikiFormat(template.Node):
 		string = self.string.resolve(context)
 		self.context = context
 		from django.contrib.markup.templatetags.markup import markdown
-		string = markdown(string.replace("\r\n","\n\n").replace('[[','LBRACK666').replace(']]','RBRACK666'))
+		string = markdown(string.replace('[[','LBRACK666').replace(']]','RBRACK666'))
 		string = string.replace('LBRACK666','[[').replace('RBRACK666',']]')
-		"""
-		single_line_pattern = "<p>(.+)</p>"
-		single_line_result = re.match(single_line_pattern,string.replace("\n</p>","</p>"))
+		single_line_pattern = "<p>([^\n]+)\n</p>"
+		single_line_result = re.match(single_line_pattern,string,re.MULTILINE)
 		if single_line_result:
-			string = single_line_result.group(0)
-
-		"""
+			string = single_line_result.groups(0)[0]
 
 		"""
 		As we're processesing a template with this templatetag, we don't want to re-query already-known
