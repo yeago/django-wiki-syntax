@@ -17,8 +17,10 @@ class WikiFormat(template.Node):
 		string = string.replace('LBRACK666','[[').replace('RBRACK666',']]')
 		single_line_pattern = "<p>([^\n]+)\n</p>"
 		single_line_result = re.match(single_line_pattern,string,re.MULTILINE)
+		"""
 		if single_line_result:
 			string = single_line_result.groups(0)[0]
+		"""
 
 		"""
 		As we're processesing a template with this templatetag, we don't want to re-query already-known
