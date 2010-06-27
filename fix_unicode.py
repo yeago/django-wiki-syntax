@@ -199,4 +199,7 @@ for c in (u"\N{SPACE}"
     xlate[ord(c)] = c
     
 def fix_unicode(s):
-    return str(s.translate(xlate))
+    try:
+       return str(s.translate(xlate))
+    except TypeError:
+       return s
