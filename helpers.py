@@ -2,6 +2,7 @@ import re
 
 from django.conf import settings
 from django.db.models.loading import get_model
+from django.core.cache import cache
 
 class WikiException(Exception): # Raised when a particular string is not found in any of the models.
 	pass
@@ -83,32 +84,28 @@ def wikify(match): # Excepts a regexp match
 	return '%s' % (token)
 
 class wikify_string(object):
-	def __call__(self, string, wiki_cache = None):
-		self.wiki_cache = wiki_cache or {} 
+	def __call__(self, string):
 		from wikisyntax import fix_unicode
 		if string:
 			content = re.sub('\[\[([^\]]+?)\]\](.*?)', self.markup_to_links, fix_unicode.fix_unicode(string))
-			return content, self.wiki_cache
+			return content
 
-		return '', self.wiki_cache # quick fix.
+		return ''
 
 	def __new__(cls, string, **kwargs):
 		obj = super(wikify_string, cls).__new__(cls)
 		return obj(string, **kwargs)
 
 	def markup_to_links(self,match):
-		string = match.groups()[0]
+		string = match.groups()[0].lower().replace(' ','-')
 
-		if not string in self.wiki_cache:
-			try:
-				new_key = wikify(match)
-			except WikiException:
-				new_key = string
+		in_cache = cache.get(string)
+		if in_cache:
+			return in_cache
 
-			if not string in self.wiki_cache:
-				self.wiki_cache[string] = new_key
-
-		else:
-			pass
-				
-		return self.wiki_cache[string]
+		try:
+			new_val = wikify(match)
+			cache.set(string,new_val)
+			return new_val
+		except WikiException:
+			return match

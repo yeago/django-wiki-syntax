@@ -1,5 +1,6 @@
 import re
 from django import template
+from django.core.cache import cache
 
 from wikisyntax.helpers import wikify_string
 
@@ -24,17 +25,10 @@ class WikiFormat(template.Node):
 
 		"""
 		As we're processesing a template with this templatetag, we don't want to re-query already-known
-		values. We store them in the context so we don't have to retrieve them again
+		values. We cache them.
 		"""
-		if not hasattr(self,'cache'):
-			self.cache = {}
-
-		context_variable = 'unlikely_variable_name_for_wiki_syntax_cache'
-		if not context_variable in context.render_context:
-			context.render_context[context_variable] = {}
-
-		content, wiki_cache = wikify_string(string,wiki_cache=context.get(context_variable))
-		context.render_context[context_variable].update(wiki_cache)
+		
+		content = wikify_string(string)
 
 		#content = re.sub('(.*?)(?:(?:\r\n\r\n)*$|\r\n\r\n)','<p>%s</p>\r\n' % r'\1' , content)
 		return content.replace("[[","").replace("]]","")
