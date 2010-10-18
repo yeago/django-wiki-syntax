@@ -16,12 +16,6 @@ class WikiFormat(template.Node):
 		from django.contrib.markup.templatetags.markup import markdown
 		string = markdown(string.replace('[[','LBRACK666').replace(']]','RBRACK666'))
 		string = string.replace('LBRACK666','[[').replace('RBRACK666',']]')
-		single_line_pattern = "<p>([^\n]+)\n</p>"
-		single_line_result = re.match(single_line_pattern,string,re.MULTILINE)
-		"""
-		if single_line_result:
-			string = single_line_result.groups(0)[0]
-		"""
 
 		"""
 		As we're processesing a template with this templatetag, we don't want to re-query already-known
@@ -29,6 +23,8 @@ class WikiFormat(template.Node):
 		"""
 		
 		content = wikify_string(string)
+		if len(content.split("</p>")) == 2 and content.split("</p>")[1] == "":
+			content = content.replace("<p>","").replace("</p>","")
 
 		#content = re.sub('(.*?)(?:(?:\r\n\r\n)*$|\r\n\r\n)','<p>%s</p>\r\n' % r'\1' , content)
 		return content.replace("[[","").replace("]]","")
