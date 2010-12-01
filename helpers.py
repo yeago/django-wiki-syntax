@@ -40,7 +40,7 @@ def wikify(match): # Excepts a regexp match
 		name = token.split(':',1)[1].rstrip()
 		for wiki in wikis:
 			if prefix == wiki.name:
-				if wiki.attempt(name):
+				if wiki.attempt(name,explicit=True):
 					"""
 					We still check attempt() because maybe
 					work is done in attempt that render relies on,
@@ -48,7 +48,7 @@ def wikify(match): # Excepts a regexp match
 					"""
 					return wiki.render(name,trail=trail,explicit=True)
 				else:
-					break
+					return 
 
 	"""
 	Now we're going to try a generic match across all our wiki objects.
@@ -100,7 +100,8 @@ class wikify_string(object):
 		string = match.groups()[0].lower().replace(' ','-')
 
 		in_cache = cache.get(string)
-		if in_cache:
+		from django.conf import settings
+		if in_cache and not settings.DEBUG:
 			return in_cache
 
 		try:
