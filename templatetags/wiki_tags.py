@@ -14,14 +14,8 @@ class WikiFormat(template.Node):
 		string = self.string.resolve(context)
 		self.context = context
 		from django.contrib.markup.templatetags.markup import markdown
-		string = markdown(string.replace('[[','LBRACK666').replace(']]','RBRACK666'))
-		string = string.replace('LBRACK666','[[').replace('RBRACK666',']]')
+		string = markdown(string.replace('[[','LBRACK666').replace(']]','RBRACK666')).replace('LBRACK666','[[').replace('RBRACK666',']]')
 
-		"""
-		As we're processesing a template with this templatetag, we don't want to re-query already-known
-		values. We cache them.
-		"""
-		
 		content = wikify_string(string)
 		if len(content.split("</p>")) == 2 and content.split("</p>")[1] == "":
 			content = content.replace("<p>","").replace("</p>","")

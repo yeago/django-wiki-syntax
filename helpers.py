@@ -48,7 +48,7 @@ def wikify(match): # Excepts a regexp match
 					"""
 					return wiki.render(name,trail=trail,explicit=True)
 				else:
-					return 
+					raise WikiException
 
 	"""
 	Now we're going to try a generic match across all our wiki objects.
@@ -78,13 +78,12 @@ def wikify(match): # Excepts a regexp match
 	So we just return the original string
 	"""
 
-	if trail:
-		return '%s%s' % (token,trail)
-
-	return '%s' % (token)
+	raise WikiException("No item found for '%s'"% (token))
 
 class wikify_string(object):
-	def __call__(self, string):
+	def __call__(self, string, fail_silently=True):
+		self.fail_silently = fail_silently
+
 		from wikisyntax import fix_unicode
 		if string:
 			content = re.sub('\[\[([^\]]+?)\]\](.*?)', self.markup_to_links, fix_unicode.fix_unicode(string))
@@ -99,14 +98,19 @@ class wikify_string(object):
 	def markup_to_links(self,match):
 		string = match.groups()[0].lower().replace(' ','-')
 
-		in_cache = cache.get(string)
 		from django.conf import settings
-		if in_cache and not settings.DEBUG:
-			return in_cache
+		if not settings.DEBUG:
+			in_cache = cache.get(string)
+			if in_cache:
+				return in_cache
 
 		try:
 			new_val = wikify(match)
 			cache.set(string,new_val)
 			return new_val
+
 		except WikiException:
-			return match
+			if not self.fail_silently:
+				raise
+
+			return string
