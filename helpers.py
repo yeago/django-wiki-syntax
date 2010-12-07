@@ -74,8 +74,6 @@ def wikify(match): # Excepts a regexp match
 
 	"""
 	We tried everything we could and didn't find anything.
-
-	So we just return the original string
 	"""
 
 	raise WikiException("No item found for '%s'"% (token))
