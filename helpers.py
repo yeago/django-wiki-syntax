@@ -81,13 +81,24 @@ def wikify(match): # Excepts a regexp match
 class wikify_string(object):
 	def __call__(self, string, fail_silently=True):
 		self.fail_silently = fail_silently
+		self.cache = {}
+		self.set_cache = {}
 
 		from wikisyntax import fix_unicode
-		if string:
-			content = re.sub('\[\[([^\]]+?)\]\](.*?)', self.markup_to_links, fix_unicode.fix_unicode(string))
-			return content
+		WIKIBRACKETS = '\[\[([^\]]+?)\]\]'
+		if not string:
+			return ''
 
-		return ''
+		string = fix_unicode.fix_unicode(string)
+
+		if getattr(settings,'WIKISYNTAX_DISABLE_CACHE',False) == False:
+			keys = re.findall(WIKIBRACKETS, string)
+			self.cache = cache.get_many([k.replace(' ','-').lower() for k in keys])
+			print self.cache
+
+		content = re.sub('%s(.*?)' % WIKIBRACKETS,self.markup_to_links,string)
+		cache.set_many(self.set_cache)
+		return content
 
 	def __new__(cls, string, **kwargs):
 		obj = super(wikify_string, cls).__new__(cls)
@@ -96,15 +107,16 @@ class wikify_string(object):
 	def markup_to_links(self,match):
 		string = match.groups()[0].lower().replace(' ','-')
 
-		from django.conf import settings
-		if not settings.DEBUG:
-			in_cache = cache.get(string)
-			if in_cache:
-				return in_cache
+		if getattr(settings,'WIKISYNTAX_DISABLE_CACHE',False) == False:
+			if string in self.cache:
+				return self.cache[string]
 
 		try:
 			new_val = wikify(match)
-			cache.set(string,new_val)
+
+			if getattr(settings,'WIKISYNTAX_DISABLE_CACHE',False) == False:
+				self.set_cache[string] = new_val
+
 			return new_val
 
 		except WikiException:
