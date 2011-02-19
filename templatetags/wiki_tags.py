@@ -1,9 +1,16 @@
 import re
 from django import template
+from django.utils.safestring import mark_safe
 
 from wikisyntax.helpers import wikify_string
 
 register = template.Library()
+
+@register.filter
+@template.defaultfilters.stringfilter
+def wikimarkdown(value):
+	from django.contrib.markup.templatetags.markup import markdown
+	return mark_safe(markdown(value.replace('[[','LBRACK666').replace(']]','RBRACK666')).replace('LBRACK666','[[').replace('RBRACK666',']]'))
 
 class WikiFormat(template.Node):
 	def __init__(self, string):
@@ -13,7 +20,7 @@ class WikiFormat(template.Node):
 		return self.string.resolve(context)
 
 	def process_string(self, string):
-		string = string.replace('[[','LBRACK666').replace(']]','RBRACK666').replace('LBRACK666','[[').replace('RBRACK666',']]')
+		string = wikimarkdown(string)
 		string = wikify_string(string)
 		if len(string.split("</p>")) == 2 and string.split("</p>")[1] == "":
 			string = string.replace("<p>","").replace("</p>","")
@@ -22,13 +29,20 @@ class WikiFormat(template.Node):
 
 	def render(self, context):
 		string = self.build_string(context)
-		from django.contrib.markup.templatetags.markup import markdown
 		string = self.process_string(string)
 
 		#content = re.sub('(.*?)(?:(?:\r\n\r\n)*$|\r\n\r\n)','<p>%s</p>\r\n' % r'\1' , content)
 		return string.replace("[[","").replace("]]","")
 
 class WikiBlockFormat(WikiFormat):
+	def process_string(self,string):
+		"""
+		Its not generally safe to use markdown on a whole blocktag because the block
+		may contain html already and there's no telling how nice it will play.
+		"""
+		string = wikify_string(string)
+		return string
+
 	def build_string(self,context):
 		return self.string.render(context)
 
@@ -39,7 +53,7 @@ def wikify(parser, token):
 	return WikiFormat(string)
 
 """
-Wouldn't really use the below because of its conflict with markdown's [link] (text)
+
 """
 
 @register.tag

@@ -94,7 +94,6 @@ class wikify_string(object):
 		if getattr(settings,'WIKISYNTAX_DISABLE_CACHE',False) == False:
 			keys = re.findall(WIKIBRACKETS, string)
 			self.cache = cache.get_many([k.replace(' ','-').lower() for k in keys])
-			print self.cache
 
 		content = re.sub('%s(.*?)' % WIKIBRACKETS,self.markup_to_links,string)
 		cache.set_many(self.set_cache)
@@ -110,6 +109,9 @@ class wikify_string(object):
 		if getattr(settings,'WIKISYNTAX_DISABLE_CACHE',False) == False:
 			if string in self.cache:
 				return self.cache[string]
+
+			if string in self.set_cache:
+				return self.set_cache[string] # Maybe they typed it twice?
 
 		try:
 			new_val = wikify(match)
