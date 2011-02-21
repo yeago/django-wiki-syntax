@@ -1,16 +1,14 @@
 import re
 from django import template
-from django.utils.safestring import mark_safe
 
-from wikisyntax.helpers import wikify_string
+from wikisyntax.helpers import wikify_string, wikisafe_markdown
 
 register = template.Library()
 
 @register.filter
 @template.defaultfilters.stringfilter
 def wikimarkdown(value):
-	from django.contrib.markup.templatetags.markup import markdown
-	return mark_safe(markdown(value.replace('[[','LBRACK666').replace(']]','RBRACK666')).replace('LBRACK666','[[').replace('RBRACK666',']]'))
+	return wikisafe_markdown(value)
 
 class WikiFormat(template.Node):
 	def __init__(self, string):
@@ -20,7 +18,7 @@ class WikiFormat(template.Node):
 		return self.string.resolve(context)
 
 	def process_string(self, string):
-		string = wikimarkdown(string)
+		string = wikisafe_markdown(string)
 		string = wikify_string(string)
 		if len(string.split("</p>")) == 2 and string.split("</p>")[1] == "":
 			string = string.replace("<p>","").replace("</p>","")
