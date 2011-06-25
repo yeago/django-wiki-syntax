@@ -98,7 +98,7 @@ class wikify_string(object):
 
 		if getattr(settings,'WIKISYNTAX_DISABLE_CACHE',False) == False:
 			keys = re.findall(WIKIBRACKETS, string)
-			self.cache = cache.get_many([k.replace(' ','-').lower() for k in keys])
+			self.cache = cache.get_many([k.replace(' ','-').lower() for k in keys if len(k) < 251])
 
 		content = re.sub('%s(.*?)' % WIKIBRACKETS,self.markup_to_links,string)
 		cache.set_many(self.set_cache)
