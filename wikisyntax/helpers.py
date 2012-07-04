@@ -1,4 +1,5 @@
 import re
+import importlib
 
 from django.contrib.markup.templatetags.markup import markdown
 from django.conf import settings
@@ -19,69 +20,44 @@ class WikiException(Exception): # Raised when a particular string is not found i
 
 def wikify(match): # Excepts a regexp match
     wikis = [] # Here we store our wiki model info
-
     for name, modstring in settings.WIKISYNTAX:
-        module = __import__(".".join(modstring.split(".")[:-1]))
-        for count, string in enumerate(modstring.split('.')):
-            if count == 0:
-                continue
-
-            module = getattr(module,string)
-        module.name = name
-        wikis.append(module())
+        modstring = modstring.split('.')
+        klass = modstring.pop()
+        package = ".".join(modstring)
+        module = importlib.import_module(package)
+        wiki = getattr(module, klass)()
+        wiki.name = name
+        wikis.append(wiki)
 
     token, trail = match.groups() # we track the 'trail' because it may be a plural 's' or something useful
+    """
+    First we're checking if the text is attempting to find a specific type of object.
 
+    [[user:Subsume]]
+    [[card:Jack of Hearts]]
+    """
     if ':' in token:
-        """
-        First we're checking if the text is attempting to find a specific type of object.
-
-        Exmaples:
-
-        [[user:Subsume]]
-
-        [[card:Jack of Hearts]]
-
-        """
-        prefix, name = token.split(':',1)
+        name, token = token.split(':',1)
         for wiki in wikis:
             if prefix == wiki.name:
-                if wiki.attempt(name,explicit=True):
-                    """
-                    We still check attempt() because maybe
-                    work is done in attempt that render relies on,
-                    or maybe this is a false positive.
-                    """
-                    return wiki.render(name,trail=trail,explicit=True)
-                else:
-                    raise WikiException
+                content = wiki.render(name, trail=trail, explicit=True)
+                if content:
+                    return content
+                raise WikiException
 
     """
     Now we're going to try a generic match across all our wiki objects.
 
-    Example:
-
     [[Christopher Walken]]
-
-    [[Studio 54]]
     [[Beverly Hills: 90210]] <-- notice ':' was confused earlier as a wiki prefix name
-
-    [[Cat]]s <-- will try to match 'Cat' but will include the plural 
-
+    [[Cat]]s <-- will try to match 'Cat' but will pass the 'trail' on 
     [[Cats]] <-- will try to match 'Cats' then 'Cat'
 
     """
     for wiki in wikis:
-        if getattr(wiki,'prefix_only',None):
-            continue
-
-        if wiki.attempt(token):
-            return wiki.render(token,trail=trail)
-
-    """
-    We tried everything we could and didn't find anything.
-    """
-
+        content = wiki.render(token, trail=trail)
+        if content:
+            return content
     raise WikiException("No item found for '%s'"% (token))
 
 class wikify_string(object):
