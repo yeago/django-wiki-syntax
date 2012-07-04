@@ -39,7 +39,7 @@ def wikify(match): # Excepts a regexp match
     if ':' in token:
         name, token = token.split(':',1)
         for wiki in wikis:
-            if prefix == wiki.name:
+            if name == wiki.name:
                 content = wiki.render(name, trail=trail, explicit=True)
                 if content:
                     return content
