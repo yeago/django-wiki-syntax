@@ -1,7 +1,8 @@
 import re
 from django import template
 
-from wikisyntax.helpers import wikify_string, wikisafe_markdown
+from wikisyntax.parse import WikiParse, wikify
+from wikisyntax.markdown import wikisafe_markdown
 
 register = template.Library()
 
@@ -19,7 +20,8 @@ class WikiFormat(template.Node):
 
     def process_string(self, string):
         string = wikisafe_markdown(string)
-        string = wikify_string(string)
+        parser = WikiParse()
+        string = parser.parse(string)
         if len(string.split("</p>")) == 2 and string.split("</p>")[1] == "":
             string = string.replace("<p>","").replace("</p>","")
 
@@ -38,7 +40,8 @@ class WikiBlockFormat(WikiFormat):
         Its not generally safe to use markdown on a whole blocktag because the block
         may contain html already and there's no telling how nice it will play.
         """
-        string = wikify_string(string)
+        parser = WikiParse()
+        string = parser.parse(string)
         return string
 
     def build_string(self,context):
