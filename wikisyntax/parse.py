@@ -4,10 +4,14 @@ from .exceptions import WikiException
 from .fix_unicode import fix_unicode
 from .helpers import get_wiki_objects
 
+
 class WikiParse(object):
     WIKIBRACKETS = '\[\[([^\]]+?)\]\]'
+
     def __init__(self, fail_silently=True):
         self.fail_silently = fail_silently
+        self.instance_map = {}
+        self.wiki_map = {}
 
     def parse(self, string):
         string = string or ''
@@ -22,14 +26,26 @@ class WikiParse(object):
 
     def callback(self, match):
         try:
-            return wikify(match)
+            """
+            Of course none of this shit is useful if you're using the
+            Caching wiki object
+            """
+            wiki_obj, token, trail, explicit = get_wiki(match)
+            rendering = wiki_obj.render(token, trail=trail, explicit=explicit)
+            token_key = '%s%s' % (token, trail or '')
+            self.wiki_map[token_key] = rendering
+            if hasattr(wiki_obj, 'instance'):
+                self.instance_map[token_key] = wiki_obj.instance
+            return rendering
+
         except WikiException:
             if not self.fail_silently:
                 raise
             return match.groups()[0]
 
-def wikify(match): # Excepts a regexp match
-    token, trail = match.groups() # we track the 'trail' because it may be a plural 's' or something useful
+
+def get_wiki(match):  # Excepts a regexp match
+    token, trail = match.groups()  # we track the 'trail' because it may be a plural 's' or something useful
     """
     First we're checking if the text is attempting to find a specific type of object.
 
@@ -38,13 +54,14 @@ def wikify(match): # Excepts a regexp match
     """
     wikis = get_wiki_objects()
     if ':' in token:
-        name, subtoken = token.split(':',1)
+        name, subtoken = token.split(':', 1)
         for wiki in wikis:
             if name == wiki.name:
                 content = wiki.render(subtoken, trail=trail, explicit=True)
                 if content:
-                    return content
-                raise WikiException("Type %s didn't return anything for '%s'" % (name, subtoken))
+                    return wiki, subtoken, trail, True
+                raise WikiException("Type %s didn't return anything for '%s'" %
+                                                            (name, subtoken))
 
     """
     Now we're going to try a generic match across all our wiki objects.
@@ -58,5 +75,5 @@ def wikify(match): # Excepts a regexp match
     for wiki in wikis:
         content = wiki.render(token, trail=trail)
         if content:
-            return content
-    raise WikiException("No item found for '%s'"% (token))
+            return wiki, token, trail, False
+    raise WikiException("No item found for '%s'" % (token))

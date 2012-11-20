@@ -1,15 +1,16 @@
-import re
 from django import template
 
-from wikisyntax.parse import WikiParse, wikify
+from wikisyntax.parse import WikiParse
 from wikisyntax.markdown import wikisafe_markdown
 
 register = template.Library()
+
 
 @register.filter
 @template.defaultfilters.stringfilter
 def wikimarkdown(value):
     return wikisafe_markdown(value)
+
 
 class WikiFormat(template.Node):
     def __init__(self, string):
@@ -34,8 +35,9 @@ class WikiFormat(template.Node):
         #content = re.sub('(.*?)(?:(?:\r\n\r\n)*$|\r\n\r\n)','<p>%s</p>\r\n' % r'\1' , content)
         return string.replace("[[","").replace("]]","")
 
+
 class WikiBlockFormat(WikiFormat):
-    def process_string(self,string):
+    def process_string(self, string):
         """
         Its not generally safe to use markdown on a whole blocktag because the block
         may contain html already and there's no telling how nice it will play.
@@ -44,8 +46,9 @@ class WikiBlockFormat(WikiFormat):
         string = parser.parse(string)
         return string
 
-    def build_string(self,context):
+    def build_string(self, context):
         return self.string.render(context)
+
 
 @register.tag
 def wikify(parser, token):

@@ -13,9 +13,11 @@ class CachingWikiMixin(object):
         if cache_key and len(cache_key) < 250:
             content = cache.get(cache_key) or None
             if content is None:
-                content = super(CachingWikiMixin, self).render(token, explicit=explicit, trail=trail)
+                content = super(CachingWikiMixin, self).render(token,
+                                                explicit=explicit, trail=trail)
                 if content:
-                    self.set_cache(token, content, explicit=explicit, trail=trail)
+                    self.set_cache(token, content, explicit=explicit,
+                                                                trail=trail)
         return content
 
     def set_cache(self, token, value, explicit=False, **kwargs):
