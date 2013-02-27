@@ -1,8 +1,15 @@
 import re
 
+from django.core.cache import cache
+from django.template.defaultfilters import slugify
+from django.contrib.contenttypes.models import ContentType
 from .exceptions import WikiException
 from .fix_unicode import fix_unicode
 from .helpers import get_wiki_objects
+
+
+def make_cache_key(token):
+    return "wiki::%s" % slugify(token)
 
 
 class WikiParse(object):
@@ -10,8 +17,7 @@ class WikiParse(object):
 
     def __init__(self, fail_silently=True):
         self.fail_silently = fail_silently
-        self.instance_map = {}
-        self.wiki_map = {}
+        self.cache_updates = {}
 
     def parse(self, string):
         string = string or ''
@@ -21,10 +27,18 @@ class WikiParse(object):
             len_rbrack = len([i for i in string.split(']]')])
             if len_lbrack != len_rbrack:
                 raise WikiException("Left bracket count doesn't match right bracket count")
+        brackets = map(make_cache_key, re.findall(self.WIKIBRACKETS, string))
+        self.cache_map = cache.get_many(brackets)
         content = re.sub('%s(.*?)' % self.WIKIBRACKETS, self.callback, string)
+        if self.cache_updates:
+            cache.set_many(dict((
+                make_cache_key(k), v) for k, v in self.cache_updates.items()), 60 * 5)
         return content
 
     def callback(self, match):
+        token, train = match.groups()
+        if make_cache_key(token) in self.cache_map:
+            return self.cache_map[make_cache_key(token)]
         try:
             """
             Of course none of this shit is useful if you're using the
@@ -33,9 +47,7 @@ class WikiParse(object):
             wiki_obj, token, trail, explicit = get_wiki(match)
             rendering = wiki_obj.render(token, trail=trail, explicit=explicit)
             token_key = '%s%s' % (token, trail or '')
-            self.wiki_map[token_key] = rendering
-            if hasattr(wiki_obj, 'instance'):
-                self.instance_map[token_key] = wiki_obj.instance
+            self.cache_updates[slugify(token)] = rendering
             return rendering
 
         except WikiException:
