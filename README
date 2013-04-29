@@ -38,23 +38,23 @@ class WikiCard(object):
 		obj = Card.objects.get(name=token)
 		return "<a href='%s'>%s</a>" % (obj.get_absolute_url(),obj.name)
 
-class WikiCardImage(object):
-	name = "image"
-	def attempt(self,token):
-		if Card.objects.filter(name=token).count():
-			return True
-		return False
+   class WikiCardImage(object):
+      name = "image"
+      def attempt(self,token):
+         if Card.objects.filter(name=token).count():
+            return True
+         return False
 
-	def render(self,token,trail=None):
-		obj = Card.objects.get(name=token)
-		return obj.image_url
+      def render(self,token,trail=None):
+         obj = Card.objects.get(name=token)
+         return obj.image_url
 
-class WikiDeck(object):
-	name = "deck"
-	def attempt(self,token):
-		if Deck.objects.filter(Q(name=token)|Q(slug=token)).count():
-			return True
-		return False
+   class WikiDeck(object):
+      name = "deck"
+      def attempt(self,token):
+         if Deck.objects.filter(Q(name=token)|Q(slug=token)).count():
+            return True
+         return False
 
-	def render(self,obj,trail=None):
-		return "Whatever, you get it"
+      def render(self,obj,trail=None):
+         return "Whatever, you get it"
