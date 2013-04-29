@@ -27,16 +27,16 @@ Keep in mind these need not be tied to a model at all. You can match and return 
 
 """
 
-class WikiCard(object):
-	name = "card" # This is if you want to allow people to specify, aka [[card:Jack of Hearts]]
-	def attempt(self,token): # A token is passed and you do whatever checking to tell if this object should be used
-		if Card.objects.filter(name=token).count() == 1:
-			return True # Use it! We found a match!
-		return False # Skip! Try another!
-
-	def render(self,token,trail=None): # What should [[card:Jack of Hearts]] look like when rendered?
-		obj = Card.objects.get(name=token)
-		return "<a href='%s'>%s</a>" % (obj.get_absolute_url(),obj.name)
+   class WikiCard(object):
+      name = "card" # This is if you want to allow people to specify, aka [[card:Jack of Hearts]]
+      def attempt(self,token): # A token is passed and you do whatever checking to tell if this object should be used
+         if Card.objects.filter(name=token).count() == 1:
+            return True # Use it! We found a match!
+         return False # Skip! Try another!
+  
+      def render(self,token,trail=None): # What should [[card:Jack of Hearts]] look like when rendered?
+         obj = Card.objects.get(name=token)
+         return "<a href='%s'>%s</a>" % (obj.get_absolute_url(),obj.name)
 
    class WikiCardImage(object):
       name = "image"
