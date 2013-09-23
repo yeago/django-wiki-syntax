@@ -1,7 +1,6 @@
 import importlib
 
 from django.conf import settings
-from django.db.models.loading import get_model
 
 def get_wiki_objects(prefix=None):
     wikis = [] # Here we store our wiki model info

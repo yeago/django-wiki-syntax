@@ -2,6 +2,7 @@ from django import template
 
 from wikisyntax.parse import WikiParse
 from wikisyntax.markdown import wikisafe_markdown
+from wikisyntax.constants import LEFTBRACKET, RIGHTBRACKET
 
 register = template.Library()
 
@@ -33,7 +34,7 @@ class WikiFormat(template.Node):
         string = self.process_string(string)
 
         #content = re.sub('(.*?)(?:(?:\r\n\r\n)*$|\r\n\r\n)','<p>%s</p>\r\n' % r'\1' , content)
-        return string.replace("[[","").replace("]]","")
+        return string.replace(LEFTBRACKET, "").replace(RIGHTBRACKET, "")
 
 
 class WikiBlockFormat(WikiFormat):
