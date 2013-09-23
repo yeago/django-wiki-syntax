@@ -1,8 +1,8 @@
 import re
 from django import forms
+from .constants import WIKIBRACKETS
 
 def wiki(value):
-    WIKIBRACKETS = '\[\[([^\]]+?)\]\]'
     def verify(match):
         token, trail = match.groups()
         if len(token) > 250:
