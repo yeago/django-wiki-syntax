@@ -14,6 +14,7 @@ def make_cache_key(token):
 
 
 class WikiParse(object):
+    WIKIBRACKETS = WIKIBRACKETS
 
     def __init__(self, fail_silently=True):
         self.fail_silently = fail_silently
@@ -27,9 +28,9 @@ class WikiParse(object):
             len_rbrack = len([i for i in string.split(']]')])
             if len_lbrack != len_rbrack:
                 raise WikiException("Left bracket count doesn't match right bracket count")
-        brackets = map(make_cache_key, re.findall(WIKIBRACKETS, string))
+        brackets = map(make_cache_key, re.findall(self.WIKIBRACKETS, string))
         self.cache_map = cache.get_many(brackets)
-        content = re.sub('%s(.*?)' % WIKIBRACKETS, self.callback, string)
+        content = re.sub('%s(.*?)' % self.WIKIBRACKETS, self.callback, string)
         if self.cache_updates:
             cache.set_many(dict((
                 make_cache_key(k), v) for k, v in self.cache_updates.items()), 60 * 5)
