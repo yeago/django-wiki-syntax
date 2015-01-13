@@ -62,5 +62,7 @@ def markdown(value, arg=''):
                     warnings.warn(python_markdown_deprecation, DeprecationWarning)
                     return mark_safe(markdown.markdown(force_unicode(value), extensions, safe_mode=safe_mode))
         else:
+            python_markdown_deprecation = ("The use of Python-Markdown "
+                "< 2.1 in Django is deprecated; please update to the current version")
             warnings.warn(python_markdown_deprecation, DeprecationWarning)
             return mark_safe(force_unicode(markdown.markdown(smart_str(value))))
