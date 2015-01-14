@@ -1,7 +1,4 @@
-try:
-    from django.contrib.markup.templatetags.markup import markdown # Django 1.4
-except ImportError:
-    from .markup import markdown # Django >= 1.6
+from .markup import markdown # Django >= 1.6
 from django.utils.safestring import mark_safe
 from .constants import LEFTBRACKET, RIGHTBRACKET
 
