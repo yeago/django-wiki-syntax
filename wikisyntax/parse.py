@@ -8,8 +8,8 @@ from .helpers import get_wiki_objects
 from .constants import WIKIBRACKETS
 
 
-def make_cache_key(token):
-    return "wiki::%s" % slugify(token)
+def make_cache_key(token, wiki_label=''):
+    return "wiki::%s" % slugify(wiki_label + token)
 
 
 class WikiParse(object):
@@ -36,7 +36,7 @@ class WikiParse(object):
         content = re.sub('%s(.*?)' % self.WIKIBRACKETS, self.callback, string)
         if self.cache_updates and self.use_cache:
             cache.set_many(dict((
-                make_cache_key(k), v[0]) for k, v in self.cache_updates.items()), 60 * 5)
+                make_cache_key(k, v[3]), v[0]) for k, v in self.cache_updates.items()), 60 * 5)
         return content
 
     def callback(self, match):
@@ -55,10 +55,10 @@ class WikiParse(object):
             Of course none of this shit is useful if you're using the
             Caching wiki object
             """
-            wiki_obj, token, trail, explicit = get_wiki(match)
+            wiki_obj, token, trail, explicit, label = get_wiki(match)
             rendering = wiki_obj.render(token, trail=trail, explicit=explicit)
             #token_key = '%s%s' % (token, trail or '')
-            self.cache_updates[slugify(token)] = (rendering, wiki_obj, match)
+            self.cache_updates[slugify(token)] = (rendering, wiki_obj, match, label)
             self.strikes.append({
                 'from_cache': False,
                 'explicit': explicit,
@@ -90,7 +90,7 @@ def get_wiki(match):  # Excepts a regexp match
             if name == wiki.name:
                 content = wiki.render(subtoken, trail=trail, explicit=True)
                 if content:
-                    return wiki, subtoken, trail, True
+                    return wiki, subtoken, trail, True, wiki.name
                 raise WikiException("Type %s didn't return anything for '%s'" %
                                                             (name, subtoken))
 
@@ -106,5 +106,5 @@ def get_wiki(match):  # Excepts a regexp match
     for wiki in wikis:
         content = wiki.render(token, trail=trail)
         if content:
-            return wiki, token, trail, False
+            return wiki, token, trail, False, ''
     raise WikiException("No item found for '%s'" % (token))
