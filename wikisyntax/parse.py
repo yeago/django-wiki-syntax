@@ -8,10 +8,8 @@ from .helpers import get_wiki_objects
 from .constants import WIKIBRACKETS
 
 
-def make_cache_key(token, wiki_label=None):
-    if wiki_label:
-        return "wiki::%s" % slugify(wiki_label + token)
-    return "wiki::%s" % slugify(token)
+def make_cache_key(token, wiki_label=''):
+    return "wiki::%s" % slugify(wiki_label + token)
 
 
 class WikiParse(object):
@@ -108,5 +106,5 @@ def get_wiki(match):  # Excepts a regexp match
     for wiki in wikis:
         content = wiki.render(token, trail=trail)
         if content:
-            return wiki, token, trail, False, None
+            return wiki, token, trail, False, ''
     raise WikiException("No item found for '%s'" % (token))
