@@ -1,9 +1,7 @@
-try:
-    from django.contrib.markup.templatetags.markup import markdown # Django 1.4
-except ImportError:
-    from django_markdown.templatetags.django_markdown import markdown # Django >= 1.6
+from .markup import markdown # Django >= 1.6
 from django.utils.safestring import mark_safe
 from .constants import LEFTBRACKET, RIGHTBRACKET
+
 
 def wikisafe_markdown(value, lsafety=None, rsafety=None):
     lsafety = lsafety or 'LBRACK666' # Some unlikely nonsense
