@@ -23,7 +23,7 @@ class WikiParse(object):
         self.strikes = []
 
     def parse(self, string):
-        string = string or ''
+        string = string or u''
         string = fix_unicode(string)
         if not self.fail_silently:
             len_lbrack = len([i for i in string.split('[[')])
