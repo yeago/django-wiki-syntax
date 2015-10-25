@@ -33,7 +33,7 @@ class WikiParse(object):
         brackets = map(make_cache_key, re.findall(self.WIKIBRACKETS, string))
         if self.use_cache:
             self.cache_map = cache.get_many(brackets)
-        content = re.sub(u'%s(.*?)' % self.WIKIBRACKETS, self.callback, string)
+        content = re.sub(u'%s(.*?)' % self.WIKIBRACKETS, self.callback, string, flags=re.UNICODE)
         if self.cache_updates and self.use_cache:
             cache.set_many(dict((
                 make_cache_key(k, v[3]), v[0]) for k, v in self.cache_updates.items()), 60 * 5)
@@ -57,7 +57,6 @@ class WikiParse(object):
             """
             wiki_obj, token, trail, explicit, label = get_wiki(match)
             rendering = wiki_obj.render(token, trail=trail, explicit=explicit)
-            #token_key = '%s%s' % (token, trail or '')
             self.cache_updates[slugify(token)] = (rendering, wiki_obj, match, label)
             self.strikes.append({
                 'from_cache': False,
@@ -68,7 +67,6 @@ class WikiParse(object):
                 'trail': trail,
                 'result': rendering})
             return rendering
-
         except WikiException:
             if not self.fail_silently:
                 raise
