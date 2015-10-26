@@ -66,7 +66,7 @@ class WikiParse(object):
                 'token': token,
                 'trail': trail,
                 'result': rendering})
-            return unicode(rendering, errors='ignore')
+            return rendering
         except WikiException:
             if not self.fail_silently:
                 raise
