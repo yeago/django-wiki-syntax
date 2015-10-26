@@ -1,4 +1,4 @@
-import re
+import regex
 
 from django.core.cache import cache
 from django.template.defaultfilters import slugify
@@ -30,10 +30,10 @@ class WikiParse(object):
             len_rbrack = len([i for i in string.split(']]')])
             if len_lbrack != len_rbrack:
                 raise WikiException("Left bracket count doesn't match right bracket count")
-        brackets = map(make_cache_key, re.findall(self.WIKIBRACKETS, string))
+        brackets = map(make_cache_key, regex.findall(self.WIKIBRACKETS, string))
         if self.use_cache:
             self.cache_map = cache.get_many(brackets)
-        content = re.sub(u'%s(.*?)' % self.WIKIBRACKETS, self.callback, string, flags=re.UNICODE)
+        content = regex.sub(u'%s(.*?)' % self.WIKIBRACKETS, self.callback, string, flags=re.UNICODE)
         if self.cache_updates and self.use_cache:
             cache.set_many(dict((
                 make_cache_key(k, v[3]), v[0]) for k, v in self.cache_updates.items()), 60 * 5)
