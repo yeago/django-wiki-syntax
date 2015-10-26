@@ -70,7 +70,10 @@ class WikiParse(object):
         except WikiException:
             if not self.fail_silently:
                 raise
-            return match.groups()[0]
+            result = match.groups()[0]
+            if not isinstance(result, unicode):
+                result = unicode(result, errors='ignore')
+            return result
 
 
 def get_wiki(match):  # Excepts a regexp match
