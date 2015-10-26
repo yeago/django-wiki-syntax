@@ -57,7 +57,7 @@ class WikiParse(object):
             """
             wiki_obj, token, trail, explicit, label = get_wiki(match)
             rendering = wiki_obj.render(token, trail=trail, explicit=explicit)
-            if not isinstance(result, unicode):
+            if not isinstance(rendering, unicode):
                 rendering = unicode(rendering, errors='ignore')
 
             self.cache_updates[slugify(token)] = (rendering, wiki_obj, match, label)
