@@ -6,6 +6,7 @@ from .exceptions import WikiException
 from .fix_unicode import fix_unicode
 from .helpers import get_wiki_objects
 from .constants import WIKIBRACKETS
+from .utils import balanced_brackets
 
 
 def make_cache_key(token, wiki_label=''):
@@ -25,15 +26,12 @@ class WikiParse(object):
     def parse(self, string):
         string = string or ''
         string = fix_unicode(string)
-        if not self.fail_silently:
-            len_lbrack = len([i for i in string.split('[[')])
-            len_rbrack = len([i for i in string.split(']]')])
-            if len_lbrack != len_rbrack:
-                raise WikiException("Left bracket count doesn't match right bracket count")
+        if not self.fail_silently and not balanced_brackets(string):
+            raise WikiException("Left bracket count doesn't match right bracket count")
         brackets = map(make_cache_key, re.findall(self.WIKIBRACKETS, string))
         if self.use_cache:
             self.cache_map = cache.get_many(brackets)
-        content = re.sub('%s(.*?)' % self.WIKIBRACKETS, self.callback, string)
+        content = re.sub(u'%s(.*?)' % self.WIKIBRACKETS, self.callback, string)
         if self.cache_updates and self.use_cache:
             cache.set_many(dict((
                 make_cache_key(k, v[3]), v[0]) for k, v in self.cache_updates.items()), 60 * 5)
