@@ -1,7 +1,7 @@
 from django import template
 
 from wikisyntax.parse import WikiParse
-from wikisyntax.markdown import wikisafe_markdown
+from wikisyntax.wikimarkdown import wikisafe_markdown
 from wikisyntax.constants import LEFTBRACKET, RIGHTBRACKET
 
 register = template.Library()

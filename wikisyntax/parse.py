@@ -1,4 +1,4 @@
-import re
+import regex
 
 from django.core.cache import cache
 from django.template.defaultfilters import slugify
@@ -24,14 +24,14 @@ class WikiParse(object):
         self.strikes = []
 
     def parse(self, string):
-        string = string or ''
+        string = string or u''
         string = fix_unicode(string)
         if not self.fail_silently and not balanced_brackets(string):
             raise WikiException("Left bracket count doesn't match right bracket count")
-        brackets = map(make_cache_key, re.findall(self.WIKIBRACKETS, string))
+        brackets = map(make_cache_key, regex.findall(self.WIKIBRACKETS, string))
         if self.use_cache:
-            self.cache_map = cache.get_many(brackets)
-        content = re.sub(u'%s(.*?)' % self.WIKIBRACKETS, self.callback, string)
+            cache_map = self.cache_map = cache.get_many(brackets)
+        content = regex.sub(u'%s(.*?)' % self.WIKIBRACKETS, self.callback, string)
         if self.cache_updates and self.use_cache:
             cache.set_many(dict((
                 make_cache_key(k, v[3]), v[0]) for k, v in self.cache_updates.items()), 60 * 5)
@@ -40,7 +40,7 @@ class WikiParse(object):
     def callback(self, match):
         token, trail = match.groups()
         if make_cache_key(token) in self.cache_map:
-            result = self.cache_map[make_cache_key(token)]
+            result = unicode(self.cache_map[make_cache_key(token)], errors='ignore')
             self.strikes.append({
                 'from_cache': True,
                 'match_obj': match,
@@ -55,7 +55,9 @@ class WikiParse(object):
             """
             wiki_obj, token, trail, explicit, label = get_wiki(match)
             rendering = wiki_obj.render(token, trail=trail, explicit=explicit)
-            #token_key = '%s%s' % (token, trail or '')
+            if not isinstance(rendering, unicode):
+                rendering = unicode(rendering, errors='ignore')
+
             self.cache_updates[slugify(token)] = (rendering, wiki_obj, match, label)
             self.strikes.append({
                 'from_cache': False,
@@ -66,18 +68,19 @@ class WikiParse(object):
                 'trail': trail,
                 'result': rendering})
             return rendering
-
         except WikiException:
             if not self.fail_silently:
                 raise
-            return match.groups()[0]
+            result = match.groups()[0]
+            if not isinstance(result, unicode):
+                result = unicode(result, errors='ignore')
+            return result
 
 
 def get_wiki(match):  # Excepts a regexp match
     token, trail = match.groups()  # we track the 'trail' because it may be a plural 's' or something useful
     """
     First we're checking if the text is attempting to find a specific type of object.
-
     [[user:Subsume]]
     [[card:Jack of Hearts]]
     """
@@ -94,12 +97,10 @@ def get_wiki(match):  # Excepts a regexp match
 
     """
     Now we're going to try a generic match across all our wiki objects.
-
     [[Christopher Walken]]
     [[Beverly Hills: 90210]] <-- notice ':' was confused earlier as a wiki prefix name
     [[Cat]]s <-- will try to match 'Cat' but will pass the 'trail' on 
     [[Cats]] <-- will try to match 'Cats' then 'Cat'
-
     """
     for wiki in wikis:
         content = wiki.render(token, trail=trail)
