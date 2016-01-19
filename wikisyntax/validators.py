@@ -1,6 +1,5 @@
-import re
 from django import forms
-from .constants import WIKIBRACKETS, LEFTBRACKET, RIGHTBRACKET
+from .constants import LEFTBRACKET, RIGHTBRACKET
 
 
 def brackets(value):

@@ -6,6 +6,7 @@ from .exceptions import WikiException
 from .fix_unicode import fix_unicode
 from .helpers import get_wiki_objects
 from .constants import WIKIBRACKETS
+from .utils import balanced_brackets
 
 
 def make_cache_key(token, wiki_label=''):
@@ -25,11 +26,8 @@ class WikiParse(object):
     def parse(self, string):
         string = string or u''
         string = fix_unicode(string)
-        if not self.fail_silently:
-            len_lbrack = len([i for i in string.split('[[')])
-            len_rbrack = len([i for i in string.split(']]')])
-            if len_lbrack != len_rbrack:
-                raise WikiException("Left bracket count doesn't match right bracket count")
+        if not self.fail_silently and not balanced_brackets(string):
+            raise WikiException("Left bracket count doesn't match right bracket count")
         brackets = map(make_cache_key, regex.findall(self.WIKIBRACKETS, string))
         if self.use_cache:
             cache_map = self.cache_map = cache.get_many(brackets)
@@ -83,7 +81,6 @@ def get_wiki(match):  # Excepts a regexp match
     token, trail = match.groups()  # we track the 'trail' because it may be a plural 's' or something useful
     """
     First we're checking if the text is attempting to find a specific type of object.
-
     [[user:Subsume]]
     [[card:Jack of Hearts]]
     """
@@ -100,12 +97,10 @@ def get_wiki(match):  # Excepts a regexp match
 
     """
     Now we're going to try a generic match across all our wiki objects.
-
     [[Christopher Walken]]
     [[Beverly Hills: 90210]] <-- notice ':' was confused earlier as a wiki prefix name
     [[Cat]]s <-- will try to match 'Cat' but will pass the 'trail' on 
     [[Cats]] <-- will try to match 'Cats' then 'Cat'
-
     """
     for wiki in wikis:
         content = wiki.render(token, trail=trail)
