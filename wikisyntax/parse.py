@@ -29,8 +29,10 @@ class WikiParse(object):
         if not self.fail_silently and not balanced_brackets(string):
             raise WikiException("Left bracket count doesn't match right bracket count")
         brackets = map(make_cache_key, regex.findall(self.WIKIBRACKETS, string))
+        if not brackets:
+            return ''
         if self.use_cache:
-            cache_map = self.cache_map = cache.get_many(brackets)
+            self.cache_map = cache.get_many(brackets)
         content = regex.sub(u'%s(.*?)' % self.WIKIBRACKETS, self.callback, string)
         if self.cache_updates and self.use_cache:
             cache.set_many(dict((
