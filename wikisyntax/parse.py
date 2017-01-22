@@ -42,10 +42,11 @@ class WikiParse(object):
     def callback(self, match):
         token, trail = match.groups()
         if make_cache_key(token) in self.cache_map:
-            if isinstance(result, unicode):
-                result = self.cache_map[make_cache_key(token)]
+            val = self.cache_map[make_cache_key(token)]
+            if isinstance(val, unicode):
+                result = val
             else:
-                result = unicode(self.cache_map[make_cache_key(token)], errors='ignore')
+                result = unicode(val, errors='ignore')
             self.strikes.append({
                 'from_cache': True,
                 'match_obj': match,
