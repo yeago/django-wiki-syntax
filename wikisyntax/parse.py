@@ -1,4 +1,5 @@
 import regex
+from django.db import transaction
 
 from django.core.cache import cache
 from django.template.defaultfilters import slugify
@@ -7,6 +8,7 @@ from .fix_unicode import fix_unicode
 from .helpers import get_wiki_objects
 from .constants import WIKIBRACKETS
 from .utils import balanced_brackets
+from wikisyntax.models import Blob
 
 
 def make_cache_key(token, wiki_label=''):
@@ -15,8 +17,10 @@ def make_cache_key(token, wiki_label=''):
 
 class WikiParse(object):
     WIKIBRACKETS = WIKIBRACKETS
+    model_backed = True
 
-    def __init__(self, fail_silently=True, use_cache=True):
+    def __init__(self, fail_silently=True, use_cache=True, **kwargs):
+        self.model_backed = kwargs.pop('model_backed', self.model_backed)
         self.fail_silently = fail_silently
         self.cache_updates = {}
         self.cache_map = {}
@@ -26,17 +30,39 @@ class WikiParse(object):
     def parse(self, string):
         string = string or u''
         string = fix_unicode(string)
+
         if not self.fail_silently and not balanced_brackets(string):
             raise WikiException("Left bracket count doesn't match right bracket count")
+
         brackets = map(make_cache_key, regex.findall(self.WIKIBRACKETS, string))
         if not brackets:
             return string
+
         if self.use_cache:
+            self.cache_map = {}
             self.cache_map = cache.get_many(brackets)
-        content = regex.sub(u'%s(.*?)' % self.WIKIBRACKETS, self.callback, string)
+        with transaction.atomic():
+            content = regex.sub(u'%s(.*?)' % self.WIKIBRACKETS, self.wrap_callback, string)
         if self.cache_updates and self.use_cache:
             cache.set_many(dict((
                 make_cache_key(k, v[3]), v[0]) for k, v in self.cache_updates.items()), 60 * 5)
+        return content
+
+    def wrap_callback(self, match):  # sorry
+        token, trail = match.groups()
+        if token:
+            try:
+                blob = Blob.objects.get(string=token)
+                if blob.defer_id:
+                    return blob.defer.bllob
+                return blob.blob
+            except Blob.DoesNotExist:
+                pass
+        content = self.callback(self, match)
+        if content:
+            Blob.objects.update_or_create(
+                blob=content,
+                string=token)
         return content
 
     def callback(self, match):
@@ -85,6 +111,7 @@ class WikiParse(object):
 
 def get_wiki(match):  # Excepts a regexp match
     token, trail = match.groups()  # we track the 'trail' because it may be a plural 's' or something useful
+
     """
     First we're checking if the text is attempting to find a specific type of object.
     [[user:Subsume]]
@@ -98,18 +125,19 @@ def get_wiki(match):  # Excepts a regexp match
                 content = wiki.render(subtoken, trail=trail, explicit=True)
                 if content:
                     return wiki, subtoken, trail, True, wiki.name
-                raise WikiException("Type %s didn't return anything for '%s'" %
-                                                            (name, subtoken))
+                raise WikiException("Type %s didn't return anything for '%s'" % (name, subtoken))
 
     """
     Now we're going to try a generic match across all our wiki objects.
     [[Christopher Walken]]
     [[Beverly Hills: 90210]] <-- notice ':' was confused earlier as a wiki prefix name
-    [[Cat]]s <-- will try to match 'Cat' but will pass the 'trail' on 
+    [[Cat]]s <-- will try to match 'Cat' but will pass the 'trail' on
     [[Cats]] <-- will try to match 'Cats' then 'Cat'
     """
     for wiki in wikis:
         content = wiki.render(token, trail=trail)
         if content:
+            Blob.objects.update_or_create(
+                defaults={'blob': content}, string=token)
             return wiki, token, trail, False, ''
     raise WikiException("No item found for '%s'" % (token))
