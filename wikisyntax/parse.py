@@ -50,7 +50,7 @@ class WikiParse(object):
 
     def wrap_callback(self, match):  # sorry
         token, trail = match.groups()
-        if token:
+        if token and len(token) <= 35:
             try:
                 blob = Blob.objects.get(string=token)
                 if blob.defer_id:
@@ -59,7 +59,7 @@ class WikiParse(object):
             except Blob.DoesNotExist:
                 pass
         content = self.callback(self, match)
-        if content:
+        if content and token and len(token) <= 35:
             Blob.objects.update_or_create(
                 blob=content,
                 string=token)
