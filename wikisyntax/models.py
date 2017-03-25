@@ -6,8 +6,8 @@ class Blob(models.Model):
     string = models.CharField(max_length=35, db_index=True, blank=True, null=True, unique=True)
     blob = models.TextField()
     stamp = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
     defer = models.ForeignKey('Blob', null=True, blank=True, related_name="deferee")
+    accessed = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
         super(Blob, self).save(*args, **kwargs)
