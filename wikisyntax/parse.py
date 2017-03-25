@@ -58,7 +58,7 @@ class WikiParse(object):
                 return blob.blob
             except Blob.DoesNotExist:
                 pass
-        content = self.callback(self, match)
+        content = self.callback(match)
         if content and token and len(token) <= 35:
             Blob.objects.update_or_create(
                 blob=content,
