@@ -1,4 +1,3 @@
-from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -11,11 +10,6 @@ class Blob(models.Model):
     defer = models.ForeignKey('Blob', null=True, blank=True, related_name="deferee")
 
     def save(self, *args, **kwargs):
-        if self.pk and (self.defer_id or self.defer):
-            try:
-                self.deferee
-                raise ValidationError("No")
-            except Blob.DoesNotExist:
-                pass
-
         super(Blob, self).save(*args, **kwargs)
+        if self.pk and self.defer:
+            Blob.objects.filter(defer=self.pk).update(defer=self.defer)

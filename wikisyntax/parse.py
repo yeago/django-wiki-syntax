@@ -52,7 +52,7 @@ class WikiParse(object):
         token, trail = match.groups()
         if token and len(token) <= 35:
             try:
-                blob = Blob.objects.get(string=token)
+                blob = Blob.objects.get(string=unicode(token))
                 if blob.defer_id:
                     return blob.defer.bllob
                 return blob.blob
@@ -61,8 +61,8 @@ class WikiParse(object):
         content = self.callback(match)
         if content and token and len(token) <= 35:
             Blob.objects.update_or_create(
-                blob=content,
-                string=token)
+                blob=unicode(content),
+                string=unicode(token))
         return content
 
     def callback(self, match):
@@ -136,8 +136,8 @@ def get_wiki(match):  # Excepts a regexp match
     """
     for wiki in wikis:
         content = wiki.render(token, trail=trail)
-        if content:
+        if content and token and len(token) <= 35:
             Blob.objects.update_or_create(
-                defaults={'blob': content}, string=token)
+                defaults={'blob': content}, string=unicode(token))
             return wiki, token, trail, False, ''
     raise WikiException("No item found for '%s'" % (token))
