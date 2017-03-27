@@ -67,7 +67,7 @@ class WikiParse(object):
         content = self.callback(match)
         if content and token and len(token) <= 35:
             Blob.objects.update_or_create(
-                blob=unicode(content),
+                defaults={'blob': unicode(content)},
                 string=unicode(token))
         return content
 
