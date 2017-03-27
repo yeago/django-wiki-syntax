@@ -51,7 +51,7 @@ class WikiParse(object):
 
     def wrap_callback(self, match):  # sorry
         token, trail = match.groups()
-        if token and len(token) <= 35:
+        if self.use_cache and token and len(token) <= 35:
             try:
                 blob = Blob.objects.get(string=unicode(token))
                 now = datetime.datetime.now()
@@ -65,7 +65,7 @@ class WikiParse(object):
             except Blob.DoesNotExist:
                 pass
         content = self.callback(match)
-        if content and token and len(token) <= 35:
+        if self.use_cache and content and token and len(token) <= 35:
             Blob.objects.update_or_create(
                 defaults={'blob': unicode(content)},
                 string=unicode(token))
