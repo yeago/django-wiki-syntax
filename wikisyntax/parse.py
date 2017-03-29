@@ -52,7 +52,7 @@ class WikiParse(object):
         token, trail = match.groups()
         if self.use_cache and token and len(token) <= 35:
             try:
-                return Blob.objects.access(string=token).blob
+                return Blob.objects.access(token).blob
             except Blob.DoesNotExist:
                 pass
         content = self.callback(match)
