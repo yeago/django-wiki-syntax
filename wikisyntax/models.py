@@ -1,4 +1,5 @@
 from django.db import models
+import datetime
 
 
 class Blob(models.Model):
@@ -8,6 +9,21 @@ class Blob(models.Model):
     stamp = models.DateTimeField(auto_now_add=True)
     defer = models.ForeignKey('Blob', null=True, blank=True, related_name="deferee")
     accessed = models.DateTimeField(auto_now_add=True)
+
+    class Manager(models.Manager):
+        def access(self, string_token, create=False):
+            string_token = unicode(string_token)
+            instance = self.get_queryset().get(string=string_token)
+            now = datetime.datetime.now()
+            AGO = datetime.datetime.now() - datetime.timedelta(days=1)
+            if instance.accessed <= AGO:
+                instance.accessed = now
+                instance.save(update_fields=['accessed'])
+            if instance.defer_id:
+                return instance.defer.blob
+            return instance
+
+    objects = Manager()
 
     def save(self, *args, **kwargs):
         super(Blob, self).save(*args, **kwargs)

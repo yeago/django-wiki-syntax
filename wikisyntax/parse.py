@@ -1,4 +1,3 @@
-import datetime
 import regex
 from django.db import transaction
 
@@ -53,15 +52,7 @@ class WikiParse(object):
         token, trail = match.groups()
         if self.use_cache and token and len(token) <= 35:
             try:
-                blob = Blob.objects.get(string=unicode(token))
-                now = datetime.datetime.now()
-                AGO = datetime.datetime.now() - datetime.timedelta(days=1)
-                if blob.accessed <= AGO:
-                    blob.accessed = now
-                    blob.save(update_fields=['accessed'])
-                if blob.defer_id:
-                    return blob.defer.bllob
-                return blob.blob
+                return Blob.objects.access(string=token).blob
             except Blob.DoesNotExist:
                 pass
         content = self.callback(match)
