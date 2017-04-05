@@ -134,7 +134,8 @@ def get_wiki(match):  # Excepts a regexp match
     for wiki in wikis:
         content = wiki.render(token, trail=trail)
         if content and token and len(token) <= 35:
-            Blob.objects.update_or_create(
-                defaults={'blob': content}, string=unicode(token))
+            if content != token:
+                Blob.objects.update_or_create(
+                    defaults={'blob': content}, string=unicode(token))
             return wiki, token, trail, False, ''
     raise WikiException("No item found for '%s'" % (token))
