@@ -1,7 +1,6 @@
 import regex
 from django.db import transaction
 
-from django.core.cache import cache
 from django.template.defaultfilters import slugify
 from .exceptions import WikiException
 from .fix_unicode import fix_unicode
@@ -36,8 +35,6 @@ class WikiParse(object):
     def __init__(self, fail_silently=True, use_cache=True, **kwargs):
         self.model_backed = kwargs.pop('model_backed', self.model_backed)
         self.fail_silently = fail_silently
-        self.cache_updates = {}
-        self.cache_map = {}
         self.use_cache = use_cache
         self.strikes = []
 
@@ -52,14 +49,8 @@ class WikiParse(object):
         if not brackets:
             return string
 
-        if self.use_cache:
-            self.cache_map = {}
-            self.cache_map = cache.get_many(brackets)
         with transaction.atomic():
             content = regex.sub(u'%s(.*?)' % self.WIKIBRACKETS, self.wrap_callback, string)
-        if self.cache_updates and self.use_cache:
-            cache.set_many(dict((
-                make_cache_key(k, v[3]), v[0]) for k, v in self.cache_updates.items()), 60 * 5)
         return content
 
     def wrap_callback(self, match):  # sorry
@@ -75,19 +66,6 @@ class WikiParse(object):
 
     def callback(self, match):
         token, trail = match.groups()
-        if make_cache_key(token) in self.cache_map:
-            val = self.cache_map[make_cache_key(token)]
-            if isinstance(val, unicode):
-                result = val
-            else:
-                result = unicode(val, errors='ignore')
-            self.strikes.append({
-                'from_cache': True,
-                'match_obj': match,
-                'token': token,
-                'trail': trail,
-                'result': result})
-            return result
         try:
             """
             Of course none of this shit is useful if you're using the
@@ -97,8 +75,6 @@ class WikiParse(object):
             rendering = wiki_obj.render(token, trail=trail, explicit=explicit)
             if not isinstance(rendering, unicode):
                 rendering = unicode(rendering, errors='ignore')
-
-            self.cache_updates[slugify(token)] = (rendering, wiki_obj, match, label)
             self.strikes.append({
                 'from_cache': False,
                 'explicit': explicit,
@@ -127,13 +103,13 @@ def get_wiki(match):  # Excepts a regexp match
     """
     wikis = get_wiki_objects()
     if ':' in token:
-        name, subtoken = token.split(':', 1)
+        namespace, subtoken = token.split(':', 1)
         for wiki in wikis:
-            if name == wiki.name:
-                content = wiki.render(subtoken, trail=trail, explicit=True)
+            if namespace == wiki.name:
+                content = wiki.render(subtoken.strip(), trail=trail, explicit=True)
                 if content:
-                    return wiki, subtoken, trail, True, wiki.name
-                raise WikiException("Type %s didn't return anything for '%s'" % (name, subtoken))
+                    return wiki, subtoken.strip(), trail, True, wiki.name
+                raise WikiException("Type %s didn't return anything for '%s'" % (namespace, subtoken))
 
     """
     Now we're going to try a generic match across all our wiki objects.
