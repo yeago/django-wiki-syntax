@@ -15,6 +15,20 @@ def make_cache_key(token, wiki_label=''):
     return "wiki::%s" % slugify(wiki_label + token)
 
 
+def update_or_not(use_cache, token, content):
+    try:
+        assert(use_cache)
+        assert(content)
+        assert(token)
+        assert(len(token) <= 35)
+        assert(content.lower() != token.lower())
+        Blob.objects.update_or_create(
+            defaults={'blob': unicode(content)},
+            string=unicode(token.lower()))
+    except AssertionError:
+        pass
+
+
 class WikiParse(object):
     WIKIBRACKETS = WIKIBRACKETS
     model_backed = True
@@ -56,10 +70,7 @@ class WikiParse(object):
             except Blob.DoesNotExist:
                 pass
         content = self.callback(match)
-        if self.use_cache and content and token and len(token) <= 35:
-            Blob.objects.update_or_create(
-                defaults={'blob': unicode(content)},
-                string=unicode(token))
+        update_or_not(self.use_cache, token, content)
         return content
 
     def callback(self, match):
@@ -133,9 +144,7 @@ def get_wiki(match):  # Excepts a regexp match
     """
     for wiki in wikis:
         content = wiki.render(token, trail=trail)
-        if content and token and len(token) <= 35:
-            if content != token:
-                Blob.objects.update_or_create(
-                    defaults={'blob': content}, string=unicode(token))
+        if content and token:
+            update_or_not(True, token, content)
             return wiki, token, trail, False, ''
     raise WikiException("No item found for '%s'" % (token))

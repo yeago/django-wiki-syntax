@@ -13,7 +13,7 @@ class Blob(models.Model):
     class Manager(models.Manager):
         def access(self, string_token, create=False):
             string_token = unicode(string_token)
-            instance = self.get_queryset().get(string=string_token)
+            instance = self.get_queryset().get(string=string_token.lower())
             now = datetime.datetime.now()
             AGO = datetime.datetime.now() - datetime.timedelta(days=1)
             if instance.accessed <= AGO:
