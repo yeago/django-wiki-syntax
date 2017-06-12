@@ -11,9 +11,12 @@ class Blob(models.Model):
     accessed = models.DateTimeField(auto_now_add=True)
 
     class Manager(models.Manager):
-        def access(self, string_token, create=False):
+        def get_by_token(self, string_token):
             string_token = unicode(string_token)
-            instance = self.get_queryset().get(string=string_token.lower())
+            return self.get_queryset().get(string=string_token.lower())
+
+        def access(self, string_token, create=False):
+            instance = self.get_by_token(string_token)
             now = datetime.datetime.now()
             AGO = datetime.datetime.now() - datetime.timedelta(days=1)
             if instance.accessed <= AGO:
