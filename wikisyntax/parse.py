@@ -3,7 +3,7 @@ import regex
 from django.core.cache import cache
 from django.template.defaultfilters import slugify
 from .exceptions import WikiException
-from .fix_unicode import fix_unicode
+# from .fix_unicode import fix_unicode
 from .helpers import get_wiki_objects
 from .constants import WIKIBRACKETS
 from .utils import balanced_brackets
@@ -25,7 +25,7 @@ class WikiParse(object):
 
     def parse(self, string):
         string = string or u''
-        string = fix_unicode(string)
+        # string = fix_unicode(string)
         if not self.fail_silently and not balanced_brackets(string):
             raise WikiException("Left bracket count doesn't match right bracket count")
         brackets = map(make_cache_key, regex.findall(self.WIKIBRACKETS, string))
