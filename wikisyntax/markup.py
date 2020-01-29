@@ -29,15 +29,13 @@ def markdown(value, arg=''):
     they will be silently ignored.
     """
     try:
-        import markdown
+        import markdown as md
     except ImportError:
-        if settings.DEBUG:
-            raise template.TemplateSyntaxError("Error in 'markdown' filter: The Python markdown library isn't installed.")
-        return force_text(value)
+        raise template.TemplateSyntaxError("Error in 'markdown' filter: The Python markdown library isn't installed.")
     else:
         # markdown.version was first added in 1.6b. The only version of markdown
         # to fully support extensions before 1.6b was the shortlived 1.6a.
-        if hasattr(markdown, 'version'):
+        if hasattr(md, 'version'):
             extensions = [e for e in arg.split(",") if e]
             if len(extensions) > 0 and extensions[0] == "safe":
                 extensions = extensions[1:]
@@ -48,21 +46,21 @@ def markdown(value, arg=''):
             "< 2.1 in Django is deprecated; please update to the current version")
             # Unicode support only in markdown v1.7 or above. Version_info
             # exist only in markdown v1.6.2rc-2 or above.
-            markdown_vers = getattr(markdown, "version_info", None)
+            markdown_vers = getattr(md, "version_info", None)
             if markdown_vers < (1,7):
                 warnings.warn(python_markdown_deprecation, DeprecationWarning)
-                return mark_safe(force_text(markdown.markdown(smart_bytes(value), extensions, safe_mode=safe_mode)))
+                return mark_safe(force_text(markdown.markdown(smart_bytes(value), safe_mode=safe_mode)))
             else:
                 if markdown_vers >= (2,1):
                     if safe_mode:
-                        return mark_safe(markdown.markdown(force_text(value), extensions, safe_mode=safe_mode, enable_attributes=False))
+                        return mark_safe(md.markdown(force_text(value), safe_mode=safe_mode))
                     else:
-                        return mark_safe(markdown.markdown(force_text(value), extensions, safe_mode=safe_mode))
+                        return mark_safe(md.markdown(force_text(value), safe_mode=safe_mode))
                 else:
                     warnings.warn(python_markdown_deprecation, DeprecationWarning)
-                    return mark_safe(markdown.markdown(force_text(value), extensions, safe_mode=safe_mode))
+                    return mark_safe(md.markdown(force_text(value), safe_mode=safe_mode))
         else:
             python_markdown_deprecation = ("The use of Python-Markdown "
                 "< 2.1 in Django is deprecated; please update to the current version")
             warnings.warn(python_markdown_deprecation, DeprecationWarning)
-            return mark_safe(force_text(markdown.markdown(smart_bytes(value))))
+            return mark_safe(force_text(md.markdown(smart_bytes(value))))
