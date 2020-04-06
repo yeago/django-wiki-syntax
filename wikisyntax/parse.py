@@ -1,6 +1,4 @@
 import regex
-from django.db import transaction
-
 from django.core.cache import caches
 from django.template.defaultfilters import slugify
 from wikisyntax.exceptions import WikiException
@@ -15,10 +13,8 @@ def make_cache_key(token, wiki_label=''):
 
 class WikiParse(object):
     WIKIBRACKETS = WIKIBRACKETS
-    model_backed = True
 
     def __init__(self, fail_silently=True, use_cache=True, **kwargs):
-        self.model_backed = kwargs.pop('model_backed', self.model_backed)
         self.fail_silently = fail_silently
         self.use_cache = use_cache
         self.cache_map = {}
