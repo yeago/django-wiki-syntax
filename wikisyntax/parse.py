@@ -21,6 +21,8 @@ class WikiParse(object):
         self.model_backed = kwargs.pop('model_backed', self.model_backed)
         self.fail_silently = fail_silently
         self.use_cache = use_cache
+        self.cache_map = {}
+        self.cache_updates = {}
         self.strikes = []
 
     def parse(self, string):
@@ -49,6 +51,7 @@ class WikiParse(object):
             rendering = wiki_obj.render(token, trail=trail, explicit=explicit)
             if not isinstance(rendering, unicode):
                 rendering = unicode(rendering, errors='ignore')
+            self.cache_updates[slugify(token)] = (rendering, wiki_obj, match, label)
             self.strikes.append({
                 'from_cache': False,
                 'explicit': explicit,
