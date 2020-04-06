@@ -33,16 +33,17 @@ class WikiFormat(template.Node):
         string = self.build_string(context)
         if LEFTBRACKET in string:
             string = self.process_string(string)
+
         return string.replace(LEFTBRACKET, "").replace(RIGHTBRACKET, "")
 
 
 class WikiBlockFormat(WikiFormat):
     def process_string(self, string):
+        """
+        Its not generally safe to use markdown on a whole blocktag because the block
+        may contain html already and there's no telling how nice it will play.
+        """
         if LEFTBRACKET in string:
-            """
-            Its not generally safe to use markdown on a whole blocktag because the block
-            may contain html already and there's no telling how nice it will play.
-            """
             parser = WikiParse()
             string = parser.parse(string)
         return string
