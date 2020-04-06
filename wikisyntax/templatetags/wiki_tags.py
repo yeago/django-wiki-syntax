@@ -31,20 +31,20 @@ class WikiFormat(template.Node):
 
     def render(self, context):
         string = self.build_string(context)
-        string = self.process_string(string)
-
-        #content = re.sub('(.*?)(?:(?:\r\n\r\n)*$|\r\n\r\n)','<p>%s</p>\r\n' % r'\1' , content)
+        if '[[' in string:
+            string = self.process_string(string)
         return string.replace(LEFTBRACKET, "").replace(RIGHTBRACKET, "")
 
 
 class WikiBlockFormat(WikiFormat):
     def process_string(self, string):
-        """
-        Its not generally safe to use markdown on a whole blocktag because the block
-        may contain html already and there's no telling how nice it will play.
-        """
-        parser = WikiParse()
-        string = parser.parse(string)
+        if '[[' in string:
+            """
+            Its not generally safe to use markdown on a whole blocktag because the block
+            may contain html already and there's no telling how nice it will play.
+            """
+            parser = WikiParse()
+            string = parser.parse(string)
         return string
 
     def build_string(self, context):
