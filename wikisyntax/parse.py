@@ -44,7 +44,7 @@ class WikiParse(object):
             if isinstance(val, str):
                 result = val
             else:
-                result = unicode(val, errors='ignore')
+                result = str(val, errors='ignore')
             self.strikes.append({
                 'from_cache': True,
                 'match_obj': match,
@@ -59,8 +59,8 @@ class WikiParse(object):
             """
             wiki_obj, token, trail, explicit, label = get_wiki(match)
             rendering = wiki_obj.render(token, trail=trail, explicit=explicit)
-            if not isinstance(rendering, unicode):
-                rendering = unicode(rendering, errors='ignore')
+            if not isinstance(rendering, str):
+                rendering = str(rendering, errors='ignore')
             self.cache_updates[slugify(token)] = (rendering, wiki_obj, match, label)
             self.strikes.append({
                 'from_cache': False,
@@ -75,8 +75,8 @@ class WikiParse(object):
             if not self.fail_silently:
                 raise
             result = match.groups()[0]
-            if not isinstance(result, unicode):
-                result = unicode(result, errors='ignore')
+            if not isinstance(result, str):
+                result = str(result, errors='ignore')
             return result
 
 
