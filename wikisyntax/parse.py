@@ -1,4 +1,5 @@
 import regex
+import logging
 
 from django.core.cache import caches
 from django.template.defaultfilters import slugify
@@ -26,7 +27,6 @@ class WikiParse(object):
         string = string or u''
         brackets = map(make_cache_key, regex.findall(self.WIKIBRACKETS, string))
         if not brackets:
-            raise WikiException("No brackets found")
             return string
         if not self.fail_silently and not len(string.split(LEFTBRACKET)) != len(string.split(RIGHTBRACKET)):
             raise WikiException("Left bracket count doesn't match right bracket count")
