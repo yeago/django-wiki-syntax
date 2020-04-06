@@ -27,7 +27,7 @@ class WikiParse(object):
         brackets = map(make_cache_key, regex.findall(self.WIKIBRACKETS, string))
         if not brackets:
             return string
-        if not self.fail_silently and not balanced_brackets(string):
+        if not self.fail_silently and not len(string.split(LEFTBRACKET)) != len(string.split(RIGHTBRACKET)):
             raise WikiException("Left bracket count doesn't match right bracket count")
         if self.use_cache:
             self.cache_map = caches['wikisyntax'].get_many(brackets)
