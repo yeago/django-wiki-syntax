@@ -1,5 +1,4 @@
 import regex
-
 from django.core.cache import caches
 from django.template.defaultfilters import slugify
 from wikisyntax.exceptions import WikiException
