@@ -1,31 +1,16 @@
 import regex
 from django.db import transaction
 
+from django.core.cache import caches
 from django.template.defaultfilters import slugify
-from .exceptions import WikiException
-# from .fix_unicode import fix_unicode
-from .helpers import get_wiki_objects
-from .constants import WIKIBRACKETS
-from .utils import balanced_brackets
-from wikisyntax.models import Blob
+from wikisyntax.exceptions import WikiException
+from wikisyntax.helpers import get_wiki_objects
+from wikisyntax.constants import WIKIBRACKETS
+from wikisyntax.constants import LEFTBRACKET, RIGHTBRACKET
 
 
 def make_cache_key(token, wiki_label=''):
-    return "wiki::%s" % slugify(wiki_label + token)
-
-
-def update_or_not(use_cache, token, content):
-    try:
-        assert(use_cache)
-        assert(content)
-        assert(token)
-        assert(len(token) <= 35)
-        assert(content.lower() != token.lower())
-        Blob.objects.update_or_create(
-            defaults={'blob': unicode(content)},
-            string=unicode(token.lower()))
-    except AssertionError:
-        pass
+    return "%s" % slugify(wiki_label + token)
 
 
 class WikiParse(object):
@@ -40,28 +25,17 @@ class WikiParse(object):
 
     def parse(self, string):
         string = string or u''
-        # string = fix_unicode(string)
-
-        if not self.fail_silently and not balanced_brackets(string):
-            raise WikiException("Left bracket count doesn't match right bracket count")
-
         brackets = map(make_cache_key, regex.findall(self.WIKIBRACKETS, string))
         if not brackets:
             return string
-
-        with transaction.atomic():
-            content = regex.sub(u'%s(.*?)' % self.WIKIBRACKETS, self.wrap_callback, string)
-        return content
-
-    def wrap_callback(self, match):  # sorry
-        token, trail = match.groups()
-        if self.use_cache and token and len(token) <= 35:
-            try:
-                return Blob.objects.access(token).blob
-            except Blob.DoesNotExist:
-                pass
-        content = self.callback(match)
-        update_or_not(self.use_cache, token, content)
+        if not self.fail_silently and not len(string.split(LEFTBRACKET)) != len(string.split(RIGHTBRACKET)):
+            raise WikiException("Left bracket count doesn't match right bracket count")
+        if self.use_cache:
+            self.cache_map = caches['wikisyntax'].get_many(brackets)
+        content = regex.sub(u'%s(.*?)' % self.WIKIBRACKETS, self.callback, string)
+        if self.cache_updates and self.use_cache:
+            caches['wikisyntax'].set_many(dict((
+                make_cache_key(k, v[3]), v[0]) for k, v in self.cache_updates.items()))
         return content
 
     def callback(self, match):
@@ -121,6 +95,5 @@ def get_wiki(match):  # Excepts a regexp match
     for wiki in wikis:
         content = wiki.render(token, trail=trail)
         if content and token:
-            update_or_not(True, token, content)
             return wiki, token, trail, False, ''
     raise WikiException("No item found for '%s'" % (token))
