@@ -41,7 +41,7 @@ class WikiParse(object):
         token, trail = match.groups()
         if make_cache_key(token) in self.cache_map:
             val = self.cache_map[make_cache_key(token)]
-            if isinstance(val, unicode):
+            if isinstance(val, str):
                 result = val
             else:
                 result = unicode(val, errors='ignore')
