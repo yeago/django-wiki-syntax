@@ -31,14 +31,14 @@ class WikiFormat(template.Node):
 
     def render(self, context):
         string = self.build_string(context)
-        if '[[' in string:
+        if LEFTBRACKET in string:
             string = self.process_string(string)
         return string.replace(LEFTBRACKET, "").replace(RIGHTBRACKET, "")
 
 
 class WikiBlockFormat(WikiFormat):
     def process_string(self, string):
-        if '[[' in string:
+        if LEFTBRACKET in string:
             """
             Its not generally safe to use markdown on a whole blocktag because the block
             may contain html already and there's no telling how nice it will play.
