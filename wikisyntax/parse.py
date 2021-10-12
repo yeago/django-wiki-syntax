@@ -91,7 +91,7 @@ def get_wiki(match):  # Excepts a regexp match
     if ':' in token:
         namespace, subtoken = token.split(':', 1)
         for wiki in wikis:
-            if namespace == wiki.name:
+            if namespace and wiki.name and namespace.lower() == wiki.name.lower():
                 content = wiki.render(subtoken.strip(), trail=trail, explicit=True)
                 if content:
                     return wiki, subtoken.strip(), trail, True, wiki.name
