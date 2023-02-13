@@ -12,7 +12,7 @@ import warnings
 
 from django import template
 from django.conf import settings
-from django.utils.encoding import smart_bytes, force_text
+from django.utils.encoding import smart_bytes, force_str
 from django.utils.safestring import mark_safe
 
 
@@ -49,18 +49,18 @@ def markdown(value, arg=''):
             markdown_vers = getattr(md, "version_info", None)
             if markdown_vers < (1,7):
                 warnings.warn(python_markdown_deprecation, DeprecationWarning)
-                return mark_safe(force_text(markdown.markdown(smart_bytes(value), safe_mode=safe_mode)))
+                return mark_safe(force_str(markdown.markdown(smart_bytes(value), safe_mode=safe_mode)))
             else:
                 if markdown_vers >= (2,1):
                     if safe_mode:
-                        return mark_safe(md.markdown(force_text(value), safe_mode=safe_mode))
+                        return mark_safe(md.markdown(force_str(value), safe_mode=safe_mode))
                     else:
-                        return mark_safe(md.markdown(force_text(value), safe_mode=safe_mode))
+                        return mark_safe(md.markdown(force_str(value), safe_mode=safe_mode))
                 else:
                     warnings.warn(python_markdown_deprecation, DeprecationWarning)
-                    return mark_safe(md.markdown(force_text(value), safe_mode=safe_mode))
+                    return mark_safe(md.markdown(force_str(value), safe_mode=safe_mode))
         else:
             python_markdown_deprecation = ("The use of Python-Markdown "
                 "< 2.1 in Django is deprecated; please update to the current version")
             warnings.warn(python_markdown_deprecation, DeprecationWarning)
-            return mark_safe(force_text(md.markdown(smart_bytes(value))))
+            return mark_safe(force_str(md.markdown(smart_bytes(value))))
