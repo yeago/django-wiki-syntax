@@ -1,71 +1,56 @@
 import regex
-from django.db import transaction
-
+from django.core.cache import caches
 from django.template.defaultfilters import slugify
-from .exceptions import WikiException
-# from .fix_unicode import fix_unicode
-from .helpers import get_wiki_objects
-from .constants import WIKIBRACKETS
-from .utils import balanced_brackets
-from wikisyntax.models import Blob
+from wikisyntax.exceptions import WikiException
+from wikisyntax.helpers import get_wiki_objects
+from wikisyntax.constants import WIKIBRACKETS
+from wikisyntax.constants import LEFTBRACKET, RIGHTBRACKET
 
 
 def make_cache_key(token, wiki_label=''):
-    return "wiki::%s" % slugify(wiki_label + token)
-
-
-def update_or_not(use_cache, token, content):
-    try:
-        assert(use_cache)
-        assert(content)
-        assert(token)
-        assert(len(token) <= 35)
-        assert(content.lower() != token.lower())
-        Blob.objects.update_or_create(
-            defaults={'blob': unicode(content)},
-            string=unicode(token.lower()))
-    except AssertionError:
-        pass
+    return "%s" % slugify(wiki_label + token)
 
 
 class WikiParse(object):
     WIKIBRACKETS = WIKIBRACKETS
-    model_backed = True
 
     def __init__(self, fail_silently=True, use_cache=True, **kwargs):
-        self.model_backed = kwargs.pop('model_backed', self.model_backed)
         self.fail_silently = fail_silently
         self.use_cache = use_cache
+        self.cache_map = {}
+        self.cache_updates = {}
         self.strikes = []
 
     def parse(self, string):
         string = string or u''
-        # string = fix_unicode(string)
-
-        if not self.fail_silently and not balanced_brackets(string):
-            raise WikiException("Left bracket count doesn't match right bracket count")
-
         brackets = map(make_cache_key, regex.findall(self.WIKIBRACKETS, string))
         if not brackets:
             return string
-
-        with transaction.atomic():
-            content = regex.sub(u'%s(.*?)' % self.WIKIBRACKETS, self.wrap_callback, string)
-        return content
-
-    def wrap_callback(self, match):  # sorry
-        token, trail = match.groups()
-        if self.use_cache and token and len(token) <= 35:
-            try:
-                return Blob.objects.access(token).blob
-            except Blob.DoesNotExist:
-                pass
-        content = self.callback(match)
-        update_or_not(self.use_cache, token, content)
+        if not self.fail_silently and len(string.split(LEFTBRACKET)) != len(string.split(RIGHTBRACKET)):
+            raise WikiException("Left bracket count doesn't match right bracket count")
+        if self.use_cache:
+            self.cache_map = caches['wikisyntax'].get_many(brackets)
+        content = regex.sub(u'%s(.*?)' % self.WIKIBRACKETS, self.callback, string)
+        if self.cache_updates and self.use_cache:
+            caches['wikisyntax'].set_many(dict((
+                make_cache_key(k, v[3]), v[0]) for k, v in self.cache_updates.items()))
         return content
 
     def callback(self, match):
         token, trail = match.groups()
+        if make_cache_key(token) in self.cache_map:
+            val = self.cache_map[make_cache_key(token)]
+            if isinstance(val, str):
+                result = val
+            else:
+                result = str(val, errors='ignore')
+            self.strikes.append({
+                'from_cache': True,
+                'match_obj': match,
+                'token': token,
+                'trail': trail,
+                'result': result})
+            return result
         try:
             """
             Of course none of this shit is useful if you're using the
@@ -73,8 +58,9 @@ class WikiParse(object):
             """
             wiki_obj, token, trail, explicit, label = get_wiki(match)
             rendering = wiki_obj.render(token, trail=trail, explicit=explicit)
-            if not isinstance(rendering, unicode):
-                rendering = unicode(rendering, errors='ignore')
+            if not isinstance(rendering, str):
+                rendering = str(rendering, errors='ignore')
+            self.cache_updates[slugify(token)] = (rendering, wiki_obj, match, label)
             self.strikes.append({
                 'from_cache': False,
                 'explicit': explicit,
@@ -88,8 +74,8 @@ class WikiParse(object):
             if not self.fail_silently:
                 raise
             result = match.groups()[0]
-            if not isinstance(result, unicode):
-                result = unicode(result, errors='ignore')
+            if not isinstance(result, str):
+                result = str(result, errors='ignore')
             return result
 
 
@@ -105,7 +91,7 @@ def get_wiki(match):  # Excepts a regexp match
     if ':' in token:
         namespace, subtoken = token.split(':', 1)
         for wiki in wikis:
-            if namespace == wiki.name:
+            if namespace and wiki.name and namespace.lower() == wiki.name.lower():
                 content = wiki.render(subtoken.strip(), trail=trail, explicit=True)
                 if content:
                     return wiki, subtoken.strip(), trail, True, wiki.name
@@ -121,6 +107,5 @@ def get_wiki(match):  # Excepts a regexp match
     for wiki in wikis:
         content = wiki.render(token, trail=trail)
         if content and token:
-            update_or_not(True, token, content)
             return wiki, token, trail, False, ''
     raise WikiException("No item found for '%s'" % (token))
