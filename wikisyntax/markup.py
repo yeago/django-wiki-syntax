@@ -63,4 +63,4 @@ def markdown(value, arg=''):
             python_markdown_deprecation = ("The use of Python-Markdown "
                 "< 2.1 in Django is deprecated; please update to the current version")
             warnings.warn(python_markdown_deprecation, DeprecationWarning)
-            return mark_safe(force_str(md.markdown(smart_bytes(value))))
+            return mark_safe(force_str(md.markdown(value)))
